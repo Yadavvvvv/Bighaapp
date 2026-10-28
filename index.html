@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>जमीन बीघा कैलकुलेटर</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f4ee;--card:#fff;--tx:#1f2a1f;--mu:#667;--ac:#2f7d32;--bd:#d9d6ca;--hl:#e8f3e8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a14;--card:#1d251d;--tx:#e8efe8;--mu:#9aa89a;--ac:#6fcf73;--bd:#334033;--hl:#243424}}
+:root[data-theme="dark"]{--bg:#141a14;--card:#1d251d;--tx:#e8efe8;--mu:#9aa89a;--ac:#6fcf73;--bd:#334033;--hl:#243424}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Noto Sans Devanagari","Segoe UI",system-ui,sans-serif;line-height:1.5}
+.w{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:4px 0 14px;color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+label{font-size:.82rem;color:var(--mu);display:block;margin-bottom:3px}
+input,select{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:1rem}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:10px}
+.row .n{grid-column:1/-1;font-weight:600;font-size:.9rem;display:flex;justify-content:space-between;align-items:center}
+.plot{border-bottom:1px dashed var(--bd);padding-bottom:10px;margin-bottom:10px}
+.plot .g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.plot .pa{font-size:.85rem;color:var(--mu);margin-top:6px}
+button{cursor:pointer;border:0;border-radius:8px;padding:10px 14px;font-size:.95rem;background:var(--ac);color:#fff;font-family:inherit}
+button.s{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button.x{background:transparent;color:#c0392b;padding:2px 8px;font-size:1.1rem}
+.big{background:var(--hl);border-radius:10px;padding:14px;text-align:center;font-size:1.5rem;font-weight:700;color:var(--ac)}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.92rem}
+td{padding:7px 4px;border-bottom:1px solid var(--bd)}
+td:last-child{text-align:right;font-weight:600}
+.bar{display:flex;gap:8px;flex-wrap:wrap}
+.note{font-size:.78rem;color:var(--mu);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>🌾 जमीन बीघा कैलकुलेटर</h1>
+
+<div class="card">
+<label>बीघा का मान (क्षेत्र का मानक चुनें)</label>
+<select id="std">
+<option value="2529.2852">पक्का बीघा – 3025 वर्ग गज (27,225 वर्ग फ़ीट ≈ 2529.29 वर्ग मी.)</option>
+<option value="2500">सरकारी/मीट्रिक बीघा – 2500 वर्ग मी. (≈ 26,909.78 वर्ग फ़ीट)</option>
+<option value="505.857">कच्चा बीघा – पक्के का 1/5 (605 वर्ग गज = 5,445 वर्ग फ़ीट)</option>
+<option value="632.32131" selected>मेरा बीघा – 756.25 वर्ग गज (6,806.25 वर्ग फ़ीट ≈ 632.32 वर्ग मी.)</option>
+<option value="custom">अपना मान डालें…</option>
+</select>
+<div id="cwrap" style="display:none;margin-top:8px">
+<label>1 बीघा = कितना क्षेत्रफल</label>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px"><input id="cust" type="text" inputmode="decimal" autocomplete="off" value="2529.29"><select id="custu"><option value="sqm">वर्ग मीटर</option><option value="sqft">वर्ग फ़ीट</option><option value="sqyd">वर्ग गज</option></select></div>
+</div>
+<div class="note">1 बीघा = 20 बिस्वा, 1 बिस्वा = 20 बिस्वांसी। आपके क्षेत्र में बीघा का मान अलग हो तो “अपना मान” चुनें।</div>
+</div>
+
+<div class="card">
+<div id="plots"></div>
+<div class="bar">
+<button id="add">➕ जमीन का टुकड़ा जोड़ें</button>
+<button class="s" id="reset">सब साफ़ करें</button>
+</div>
+<div class="note">हर टुकड़े की इकाई अलग हो सकती है (फ़ीट, मीटर, गज, हाथ आदि)। भुजाएँ क्रम से (घूमते हुए) डालें। औसत विधि = (भुजा1+भुजा3)/2 × (भुजा2+भुजा4)/2, लगभग सही नतीजा देती है। सटीक नाप के लिए एक विकर्ण भी नापकर “भुजाएँ + विकर्ण” विधि चुनें।</div>
+</div>
+
+<div class="card">
+<div class="big" id="main">0 बीघा</div>
+<div id="words" style="text-align:center;font-size:1.15rem;margin-top:10px;color:var(--ac);font-weight:600"></div>
+<table id="tbl"></table>
+<div style="margin-top:16px;font-weight:600;color:var(--ac)">📏 इकाई सूची (चुने गए बीघा के मान के अनुसार)</div>
+<div style="overflow-x:auto"><table id="utbl" style="font-size:.82rem"></table></div>
+<div class="note">1 बीघा = 20 बिस्वा = 400 बिस्वांसी। आख़िरी कॉलम बताता है कि आपकी कुल जमीन में इतनी इकाइयाँ हैं।</div>
+<div class="bar" style="margin-top:12px"><button id="copy">📋 नतीजा कॉपी करें</button></div>
+</div>
+</div>
+
+<script>
+var U={ft:["फ़ीट",0.3048],m:["मीटर",1],yd:["गज / यार्ड",0.9144],in:["इंच",0.0254],cm:["सेंटीमीटर",0.01],hath:["हाथ (1.5 फ़ीट)",0.4572]};
+var plots=[],cnt=0;
+function unitOpts(sel){var s="";for(var k in U){s+='<option value="'+k+'"'+(k===sel?" selected":"")+'>'+U[k][0]+'</option>'}return s}
+function addPlot(){cnt++;plots.push({id:cnt,m:"avg",a:"",b:"",c:"",d:"",g:"",u:"ft"});render()}
+var MODES={avg:"चार असमान भुजाएँ – औसत विधि (पटवारी तरीका)",diag:"चार भुजाएँ + एक विकर्ण (सबसे सटीक)",brahma:"चार भुजाएँ – ब्रह्मगुप्त सूत्र (अनुमानित)",rect:"आयत (लम्बाई × चौड़ाई)"};
+function modeOpts(s){var h="";for(var k in MODES){h+='<option value="'+k+'"'+(k===s?" selected":"")+'>'+MODES[k]+'</option>'}return h}
+function fld(p,k){var L={a:"भुजा 1",b:"भुजा 2",c:"भुजा 3 (भुजा 1 के सामने)",d:"भुजा 4 (भुजा 2 के सामने)",g:"विकर्ण"};if(p.m==="rect"){L.a="लम्बाई";L.b="चौड़ाई"}return '<div><label>'+L[k]+'</label><input type="text" inputmode="decimal" autocomplete="off" placeholder="0" data-id="'+p.id+'" data-f="'+k+'" value="'+p[k]+'"></div>'}
+function num(v){var s=String(v||"").replace(/[०-९]/g,function(d){return d.charCodeAt(0)-2406}).replace(/[,।॥]/g,".").replace(/\s/g,"");var n=parseFloat(s);return isNaN(n)||n<0?0:n}
+function tri(x,y,z){if(!x||!y||!z)return 0;var s=(x+y+z)/2,q=s*(s-x)*(s-y)*(s-z);return q>0?Math.sqrt(q):-1}
+function plotArea(p){
+ var f=U[p.u][1],A=num(p.a)*f,B=num(p.b)*f,C=num(p.c)*f,D=num(p.d)*f,G=num(p.g)*f;
+ if(p.m==="rect")return{a:A*B};
+ if(p.m==="avg")return{a:(A+C)/2*(B+D)/2};
+ if(p.m==="brahma"){var s=(A+B+C+D)/2,q=(s-A)*(s-B)*(s-C)*(s-D);return q>0?{a:Math.sqrt(q)}:{a:0,err:(A&&B&&C&&D)?"भुजाएँ मेल नहीं खातीं":""}}
+ var t1=tri(A,B,G),t2=tri(C,D,G);
+ if(t1<0||t2<0)return{a:0,err:"भुजाएँ और विकर्ण मेल नहीं खाते"};
+ return{a:t1+t2};
+}
+function render(){
+  var h="";
+  plots.forEach(function(p,i){
+    h+='<div class="plot"><div class="n"><span>टुकड़ा '+(i+1)+'</span>'+(plots.length>1?'<button class="x" data-del="'+p.id+'">✕</button>':'')+'</div>'+
+    '<div style="margin-bottom:8px"><label>टुकड़े का प्रकार / गणना विधि</label><select data-id="'+p.id+'" data-f="m">'+modeOpts(p.m)+'</select></div><div class="g">'+fld(p,"a")+fld(p,"b")+(p.m==="rect"?"":fld(p,"c")+fld(p,"d"))+(p.m==="diag"?fld(p,"g"):"")+'</div><div style="margin-top:8px"><label>इकाई (सभी भुजाओं की)</label><select data-id="'+p.id+'" data-f="u">'+unitOpts(p.u)+'</select></div>'+
+    ''+
+    ''+
+    '<div class="pa" id="pa'+p.id+'"></div></div>';
+  });
+  document.getElementById("plots").innerHTML=h;
+  calc();
+}
+function bigha(){var v=document.getElementById("std").value;if(v==="custom"){var c=num(document.getElementById("cust").value);c=c*CU[document.getElementById("custu").value];return c>0?c:2529.2852}return parseFloat(v)}
+function fmt(n,d){return Number(n).toLocaleString("en-IN",{maximumFractionDigits:d})}
+function split(sqm){
+  var b=bigha(),t=sqm/b,B=Math.floor(t+1e-9);
+  var r=(t-B)*20,bw=Math.floor(r+1e-9);
+  var s=(r-bw)*20;
+  return {B:B,bw:bw,bs:s,txt:B+" बीघा "+bw+" बिस्वा "+fmt(s,2)+" बिस्वांसी"};
+}
+var CU={sqm:1,sqft:0.09290304,sqyd:0.83612736},cuPrev="sqm";
+var NW=["शून्य","एक","दो","तीन","चार","पाँच","छह","सात","आठ","नौ","दस"];
+function nw(n){return n<=10?NW[n]:String(n)}
+function words(x,unit){
+ var w=Math.floor(x+1e-9),f=x-w,q=Math.round(f*4),ex=Math.abs(f*4-q)<0.02,s;
+ if(q===4){w+=1;q=0}
+ if(q===0){if(w===0)return "";s=nw(w)}
+ else if(q===1)s=w===0?"पाव":(w===1?"सवा":"सवा "+nw(w));
+ else if(q===2)s=w===0?"आधा":(w===1?"डेढ़":(w===2?"ढाई":"साढ़े "+nw(w)));
+ else s=w===0?"पौन":"पौने "+nw(w+1);
+ return (ex?"":"लगभग ")+s+" "+unit;
+}
+var last="";
+function calc(){
+  var tot=0;
+  plots.forEach(function(p){
+    var r=plotArea(p),a=r.a;
+    tot+=a;
+    var el=document.getElementById("pa"+p.id);
+    if(el)el.textContent=r.err?"⚠️ "+r.err:a>0?"क्षेत्रफल: "+fmt(a/0.09290304,2)+" वर्ग फ़ीट = "+split(a).txt:"";
+  });
+  var s=split(tot);
+  document.getElementById("main").textContent=s.txt;
+  var xb=tot/bigha(),wd=tot>0?(xb<0.2?words(xb*20,"बिस्वा"):words(xb,"बीघा")):"";
+  document.getElementById("words").textContent=wd?"शब्दों में: "+wd:"";
+  var b=bigha(),R=[["1 बीघा",b,tot/b],["1 बिस्वा",b/20,tot/(b/20)],["1 बिस्वांसी",b/400,tot/(b/400)]];
+  document.getElementById("utbl").innerHTML='<tr><td><b>इकाई</b></td><td><b>वर्ग मी.</b></td><td><b>वर्ग फ़ीट</b></td><td><b>वर्ग गज</b></td><td><b>कुल जमीन में</b></td></tr>'+R.map(function(r){return"<tr><td>"+r[0]+"</td><td>"+fmt(r[1],2)+"</td><td>"+fmt(r[1]/0.09290304,2)+"</td><td>"+fmt(r[1]/0.83612736,2)+"</td><td>"+fmt(r[2],2)+"</td></tr>"}).join("");
+  var rows=[["कुल बीघा (दशमलव)",fmt(tot/bigha(),4)+" बीघा"],["कुल बिस्वा",fmt(tot/bigha()*20,3)+" बिस्वा"],
+  ["वर्ग मीटर",fmt(tot,2)],["वर्ग फ़ीट",fmt(tot/0.09290304,2)],["वर्ग गज",fmt(tot/0.83612736,2)],
+  ["एकड़",fmt(tot/4046.8564224,4)],["हेक्टेयर",fmt(tot/10000,4)]];
+  document.getElementById("tbl").innerHTML=rows.map(function(r){return"<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>"}).join("");
+  last="कुल जमीन ("+plots.length+" टुकड़े): "+s.txt+(wd?" ("+wd+")":"")+"\nवर्ग मीटर: "+fmt(tot,2)+" | वर्ग फ़ीट: "+fmt(tot/0.09290304,2)+" | वर्ग गज: "+fmt(tot/0.83612736,2);
+}
+document.getElementById("plots").addEventListener("input",function(e){
+  var t=e.target,id=+t.dataset.id;if(!id)return;
+  plots.forEach(function(p){if(p.id===id)p[t.dataset.f]=t.value});if(t.dataset.f==="m")render();else calc();
+});
+document.getElementById("plots").addEventListener("click",function(e){
+  var d=e.target.dataset.del;if(d){plots=plots.filter(function(p){return p.id!==+d});render()}
+});
+document.getElementById("add").onclick=addPlot;
+document.getElementById("reset").onclick=function(){plots=[];addPlot()};
+document.getElementById("std").onchange=function(){document.getElementById("cwrap").style.display=this.value==="custom"?"block":"none";calc()};
+document.getElementById("cust").oninput=calc;
+document.getElementById("custu").onchange=function(){var i=document.getElementById("cust"),v=num(i.value);if(v>0){i.value=+(v*CU[cuPrev]/CU[this.value]).toFixed(2)}cuPrev=this.value;calc()};
+document.getElementById("copy").onclick=function(){
+  var b=this;
+  function ok(){b.textContent="✅ कॉपी हो गया";setTimeout(function(){b.textContent="📋 नतीजा कॉपी करें"},1500)}
+  try{navigator.clipboard.writeText(last).then(ok,function(){})}catch(e){}
+};
+addPlot();
+</script>
+</body>
+</html>
